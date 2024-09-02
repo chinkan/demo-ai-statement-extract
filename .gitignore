@@ -16,3 +16,5 @@ secret/*
 
 # virtual environment
 .venv
+
+!.gitkeep
