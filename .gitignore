@@ -1,0 +1,18 @@
+# Python
+*.pyc
+__pycache__/
+
+# Environment
+.env
+
+# Input files
+input/*
+
+# Output files
+output/*
+
+# Secret files
+secret/*
+
+# virtual environment
+.venv

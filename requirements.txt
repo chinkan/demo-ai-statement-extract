@@ -1,0 +1,4 @@
+google-cloud-vision
+pdf2image
+langgraph
+requests
