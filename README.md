@@ -31,6 +31,13 @@ graph TD
     style End fill:#FF5722,stroke:#333,stroke-width:2px
 ```
 
+## Prerequisites
+
+-   Python 3.10 or later
+-   [OpenRouter](https://openrouter.ai/) API key
+-   [Google Cloud Vision API](https://cloud.google.com/vision) key
+-   [Poppler](https://poppler.freedesktop.org/) (for pdf2image)
+
 ## Installation
 
 1. Clone this repository:
