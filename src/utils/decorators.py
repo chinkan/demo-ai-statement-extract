@@ -12,7 +12,6 @@ def log_node_entry_exit(func):
             print(f"Error in {func.__name__}: {str(e)}")
             error_state = State(file_path=state['file_path'], ocr_text=state.get('ocr_text', ''), 
                                 transactions=state.get('transactions', []), 
-                                final_transactions=state.get('final_transactions', []),
                                 error=f"Error in {func.__name__}: {str(e)}\n{traceback.format_exc()}")
             return error_state
     return wrapper
