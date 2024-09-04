@@ -4,6 +4,10 @@
 
 This project demonstrates a credit card statement assistant that can process PDF statements, perform OCR, and use LangGraph for AI-based transaction corrections.
 
+
+https://github.com/user-attachments/assets/a7f5a839-c7bd-4598-bdfe-9c2168008657
+
+
 ## Technologies
 
 -   LangGraph
