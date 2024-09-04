@@ -6,8 +6,9 @@ from pdf2image import convert_from_path
 import sys
 from typing import List
 
-# Initialize Google Cloud Vision client
-client = vision.ImageAnnotatorClient()
+def get_google_vision_client():
+    # Initialize Google Cloud Vision client
+    return vision.ImageAnnotatorClient()
 
 def convert_pdf_to_images(pdf_path: str) -> List[bytes]:
     try:
@@ -36,7 +37,7 @@ def perform_ocr_pdf2image(file_path: str) -> str:
     full_text = ""
     for image in images:
         image = types.Image(content=image)
-        response = client.document_text_detection(image=image)
+        response = get_google_vision_client().document_text_detection(image=image)
         full_text += response.full_text_annotation.text + "\n\n"
     
     return full_text.strip()
@@ -69,7 +70,7 @@ def perform_ocr_pdf(file_path: str) -> str:
     )
 
     # Execute request
-    response = client.batch_annotate_files(requests=[request])
+    response = get_google_vision_client().batch_annotate_files(requests=[request])
 
     # Process response
     full_text = ""
