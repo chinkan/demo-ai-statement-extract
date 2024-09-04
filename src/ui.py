@@ -54,4 +54,4 @@ with gr.Blocks() as demo:
     process_button.click(process, inputs=[statement, cloud_vision_api_key, openrouter_api_key, openrouter_model, openrouter_api_url], outputs=[output])
     continue_button.click(continue_processing, inputs=[human_input], outputs=[output])
     export_button.click(export_transactions, inputs=[output], outputs=[csv])
-demo.launch()
+demo.launch(inbrowser=True)

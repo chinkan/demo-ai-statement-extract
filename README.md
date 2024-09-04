@@ -7,9 +7,9 @@ This project demonstrates a credit card statement assistant that can process PDF
 ## Technologies
 
 -   LangGraph
--   Google Cloud Vision API
--   pdf2image
--   OpenRouter API (for access Claude 3.5 Sonnet)
+-   Google Cloud Vision API [Google Cloud Vision API](https://cloud.google.com/vision)
+-   OpenRouter API (for access Claude 3.5 Sonnet) [OpenRouter API](https://openrouter.ai/)
+-   pdf2image (optional) [pdf2image](https://pdf2image.readthedocs.io/en/latest/)
 
 ## LangGraph
 
@@ -34,9 +34,9 @@ graph TD
 ## Prerequisites
 
 -   Python 3.10 or later
--   [OpenRouter](https://openrouter.ai/) API key
--   [Google Cloud Vision API](https://cloud.google.com/vision) key
--   [Poppler](https://poppler.freedesktop.org/) (for pdf2image)
+-   OpenRouter API key (Get it [here](https://openrouter.ai/))
+-   Enable Google Cloud Vision API (Get service account keys [here](https://cloud.google.com/iam/docs/keys-list-get))
+-   Poppler (for pdf2image, optional)
 
 ## Installation
 
@@ -47,32 +47,24 @@ graph TD
     cd demo-ai-statement-extract
     ```
 
-2. Create and activate a virtual environment:
+2. Configure environment variables:
 
-    ```bash
-    python -m venv venv
-    source venv/bin/activate  # On Windows use `venv\Scripts\activate`
-    ```
-
-3. Install dependencies:
-
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-4. Configure environment variables:
     - Copy `.env.example` to `.env`
     - Fill in the variables in the `.env` file
 
-## Usage
+3. Run it
 
-Place your monthly credit card statement PDF file in the `input` folder.
+    - On Windows
 
-Run the main program:
+    ```bash
+    run.bat
+    ```
 
-```bash
-python src/main.py
-```
+    - On Linux or MacOS
+
+    ```bash
+    ./run.sh
+    ```
 
 ## Output
 
