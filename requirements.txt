@@ -3,3 +3,5 @@ pdf2image
 langgraph
 requests
 gradio
+torch
+transformers
