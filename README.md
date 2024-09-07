@@ -8,6 +8,11 @@ sdk_version: 4.43.0
 app_file: src/ui.py
 pinned: false
 license: mit
+
+hf_oauth: true
+# optional, see "Scopes" below. "openid profile" is always included.
+hf_oauth_scopes:
+    - read-repos
 ---
 
 # Credit Card Statement Assistant
