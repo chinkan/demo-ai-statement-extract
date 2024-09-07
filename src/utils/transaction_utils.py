@@ -58,7 +58,7 @@ def extract_transactions_locally(ocr_text: str) -> List[Dict[str, str]]:
     print(f"使用緊嘅設備係: {device}")
 
     # Load the model and tokenizer
-    model_name = "google/gemma-2-2b-it"
+    model_name = "meta-llama/Meta-Llama-3.1-8B-Instruct"
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = AutoModelForCausalLM.from_pretrained(model_name).to(device)
 
@@ -116,3 +116,14 @@ def store_transactions_csv(transactions: List[Dict[str, str]], filename: str):
             writer.writerow(transaction)
     
     print(f"Transactions stored in {filename}")
+
+if __name__ == "__main__":  
+    with open("output/sample.txt", "r", encoding="utf-8") as f:
+        ocr_text = f.read()
+    transactions = extract_transactions_locally(ocr_text)
+    print(transactions)
+
+    with open("output/transactions.csv", "w", encoding="utf-8") as f:
+        f.write("date,description,amount\n")
+        for transaction in transactions:
+            f.write(f"{transaction['date']},{transaction['description']},{transaction['amount']}\n")

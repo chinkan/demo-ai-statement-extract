@@ -1,12 +1,22 @@
+---
+title: Demo Statement Extractor
+emoji: 🏢
+colorFrom: indigo
+colorTo: yellow
+sdk: gradio
+sdk_version: 4.43.0
+app_file: src/ui.py
+pinned: false
+license: mit
+---
+
 # Credit Card Statement Assistant
 
 ## Introduction
 
 This project demonstrates a credit card statement assistant that can process PDF statements, perform OCR, and use LangGraph for AI-based transaction corrections.
 
-
 https://github.com/user-attachments/assets/a7f5a839-c7bd-4598-bdfe-9c2168008657
-
 
 ## Technologies
 

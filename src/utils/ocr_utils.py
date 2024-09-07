@@ -89,3 +89,8 @@ def perform_ocr_pdf(file_path: str) -> str:
         )
     
     return clean_multiple_spaces(full_text)
+
+if __name__ == "__main__":
+    result = perform_ocr_pdf("input/sample.pdf")
+    with open("output/sample.txt", "w", encoding="utf-8") as f:
+        f.write(result)
