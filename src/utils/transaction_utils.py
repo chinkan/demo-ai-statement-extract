@@ -53,10 +53,14 @@ def extract_transactions(ocr_text: str) -> List[Dict[str, str]]:
         return []
 
 def extract_transactions_locally(ocr_text: str) -> List[Dict[str, str]]:
+    # 檢查系統係咪有 CUDA
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"使用緊嘅設備係: {device}")
+
     # Load the model and tokenizer
     model_name = "google/gemma-2-2b-it"
     tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForCausalLM.from_pretrained(model_name)
+    model = AutoModelForCausalLM.from_pretrained(model_name).to(device)
 
     # Prepare the prompt
     prompt = f"""You are an AI assistant trained to extract transaction information from financial statements. 
@@ -73,7 +77,7 @@ def extract_transactions_locally(ocr_text: str) -> List[Dict[str, str]]:
     Please return ONLY the list of JSON objects, without any additional explanation or text."""
 
     # Tokenize the input
-    inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=2048)
+    inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=2048).to(device)
 
     # Generate the response
     with torch.no_grad():
