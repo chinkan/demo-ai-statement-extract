@@ -81,7 +81,7 @@ def process_file_from_ui(file_path: str, thread: Dict, human_input: str = None) 
 
 # Example usage
 if __name__ == "__main__":
-    file_path = "./input/sample.pdf"
+    file_path = "./input/sample3.pdf"
     result = process_stream(file_path)
     if result:
         print("Final processed transactions:")

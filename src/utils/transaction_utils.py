@@ -5,9 +5,11 @@ import os
 from typing import List, Dict
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
+import google.generativeai as genai
+from langchain_google_genai import ChatGoogleGenerativeAI
 
-def extract_transactions(ocr_text: str) -> List[Dict[str, str]]:
-    prompt = f"""You are an AI assistant trained to extract transaction information from financial statements. 
+def get_prompt(ocr_text: str):
+    return f"""You are an AI assistant trained to extract transaction information from financial statements. 
     Given the following text from a financial statement, please extract all transactions and format them as a list of JSON objects.
     Each transaction should have the following properties:
     - date: The date of the transaction in the format YYYY-MM-DD
@@ -19,6 +21,9 @@ def extract_transactions(ocr_text: str) -> List[Dict[str, str]]:
     {ocr_text}
 
     Please return ONLY the list of JSON objects, without any additional explanation or text."""
+
+def extract_transactions(ocr_text: str) -> List[Dict[str, str]]:
+    prompt = get_prompt(ocr_text)
 
     headers = {
         "Authorization": f"Bearer {os.getenv('OPENROUTER_API_KEY')}",
@@ -63,18 +68,7 @@ def extract_transactions_locally(ocr_text: str) -> List[Dict[str, str]]:
     model = AutoModelForCausalLM.from_pretrained(model_name).to(device)
 
     # Prepare the prompt
-    prompt = f"""You are an AI assistant trained to extract transaction information from financial statements. 
-    Given the following text from a financial statement, please extract all transactions and format them as a list of JSON objects.
-    Each transaction should have the following properties:
-    - date: The date of the transaction in the format YYYY-MM-DD
-    - description: A brief description of the transaction
-    - amount: The transaction amount as a float (negative for debits, positive for credits)
-
-    Here's the text from the financial statement:
-
-    {ocr_text}
-
-    Please return ONLY the list of JSON objects, without any additional explanation or text."""
+    prompt = get_prompt(ocr_text)
 
     # Tokenize the input
     inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=2048).to(device)
@@ -117,10 +111,36 @@ def store_transactions_csv(transactions: List[Dict[str, str]], filename: str):
     
     print(f"Transactions stored in {filename}")
 
+def extract_transactions_gemini(ocr_text: str) -> List[Dict[str, str]]:
+    prompt = get_prompt(ocr_text)
+
+    try:
+        # 初始化 ChatGoogleGenerativeAI
+        chat = ChatGoogleGenerativeAI(model="gemini-1.5-pro", google_api_key=os.getenv('GOOGLE_GEMINI_API_KEY'))
+        
+        # 生成回應
+        response = chat.invoke(prompt)
+        transactions_str = response.content
+        
+        transactions = json.loads(transactions_str)
+        
+        # 驗證並清理交易
+        validated_transactions = []
+        for transaction in transactions:
+            if all(key in transaction for key in ['date', 'description', 'amount']):
+                # 確保金額是浮點數
+                transaction['amount'] = float(transaction['amount'])
+                validated_transactions.append(transaction)
+        
+        return validated_transactions
+    except Exception as e:
+        print(f"使用 Gemini 提取交易時出錯：{str(e)}")
+        return []
+
 if __name__ == "__main__":  
     with open("output/sample.txt", "r", encoding="utf-8") as f:
         ocr_text = f.read()
-    transactions = extract_transactions_locally(ocr_text)
+    transactions = extract_transactions_gemini(ocr_text)
     print(transactions)
 
     with open("output/transactions.csv", "w", encoding="utf-8") as f:

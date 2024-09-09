@@ -1,7 +1,9 @@
-google-cloud-vision
 pdf2image
 langgraph
 requests
 gradio
 torch
 transformers
+google-cloud-vision
+langsmith
+langchain-google-genai

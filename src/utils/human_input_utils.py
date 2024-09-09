@@ -4,6 +4,8 @@ import os
 from typing import List, Dict
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
+import google.generativeai as genai
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 def extract_json_from_string(s: str) -> str:
     """Extract JSON object from a string."""
@@ -133,10 +135,48 @@ def interpret_and_update_locally(user_input: str, transactions: List[Dict[str, s
         return transactions
     
 
+def interpret_and_update_gemini(user_input: str, transactions: List[Dict[str, str]]) -> List[Dict[str, str]]:
+    prompt = get_prompt(user_input, transactions)
+
+    # 初始化 ChatGoogleGenerativeAI
+    chat = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=os.getenv('GOOGLE_GEMINI_API_KEY'))
+
+    try:
+        # 生成回應
+        response = chat.invoke(prompt)
+        
+        updated_transactions_str = response.content
+        
+        print("AI 回應:")
+        print(updated_transactions_str)
+        
+        # 從回應中提取 JSON
+        json_str = extract_json_from_string(updated_transactions_str)
+        
+        if not json_str:
+            print("錯誤：AI 回應中未找到有效的 JSON。")
+            return transactions
+        
+        try:
+            updated_data = json.loads(json_str)
+            if 'transactions' in updated_data and isinstance(updated_data['transactions'], list):
+                return updated_data['transactions']
+            else:
+                print("錯誤：AI 回應不包含 'transactions' 列表。")
+                return transactions
+        except json.JSONDecodeError as e:
+            print(f"解析 AI 回應中的 JSON 時出錯：{str(e)}")
+            print("提取的 JSON 內容：")
+            print(json_str)
+            return transactions
+    except Exception as e:
+        print(f"interpret_and_update_gemini 中發生意外錯誤：{str(e)}")
+        return transactions
+
 if __name__ == "__main__":
     with open("output/transactions.csv", "r", encoding="utf-8") as f:
         transactions = f.readlines()
     print(transactions)
-    updated_transactions = interpret_and_update_locally("add a transaction for 1000 on 2024-01-01 with description 'test'", transactions)
+    updated_transactions = interpret_and_update_gemini("add a transaction for 1000 on 2024-01-01 with description 'test'", transactions)
     print(updated_transactions)
 
