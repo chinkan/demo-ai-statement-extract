@@ -5,6 +5,7 @@ import io
 from pdf2image import convert_from_path
 import sys
 from typing import List
+import re
 
 def get_google_vision_client():
     # Initialize Google Cloud Vision client
@@ -40,7 +41,7 @@ def perform_ocr_pdf2image(file_path: str) -> str:
         response = get_google_vision_client().document_text_detection(image=image)
         full_text += response.full_text_annotation.text + "\n\n"
     
-    return full_text.strip()
+    return clean_multiple_spaces(full_text)
 
 def perform_ocr_pdf(file_path: str) -> str:
     if not os.path.exists(file_path):
@@ -84,4 +85,7 @@ def perform_ocr_pdf(file_path: str) -> str:
             'https://cloud.google.com/apis/design/errors'
         )
     
-    return full_text.strip()
+    return clean_multiple_spaces(full_text)
+
+def clean_multiple_spaces(text: str) -> str:
+    return re.sub(r'\s+', ' ', text).strip()
