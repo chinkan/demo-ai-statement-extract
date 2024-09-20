@@ -3,3 +3,11 @@ pdf2image
 langgraph
 requests
 gradio
+transformers
+accelerate
+
+#Normal
+# torch
+
+#CUDA
+torch --index-url https://download.pytorch.org/whl/cu118

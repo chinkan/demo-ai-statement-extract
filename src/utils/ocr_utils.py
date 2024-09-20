@@ -89,3 +89,12 @@ def perform_ocr_pdf(file_path: str) -> str:
 
 def clean_multiple_spaces(text: str) -> str:
     return re.sub(r'\s+', ' ', text).strip()
+
+if __name__ == "__main__":
+
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "<Secret>"
+    
+    pdf_path = "input/sample3.pdf"
+    ocr_text = perform_ocr_pdf(pdf_path)
+    with open("output/sample.txt", "w", encoding="utf-8") as file:
+        file.write(ocr_text)
