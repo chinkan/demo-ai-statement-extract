@@ -19,7 +19,7 @@ def get_prompt(ocr_text: str) -> str:
 
     {ocr_text}
 
-    Please return ONLY the list of JSON objects, without any additional explanation or text."""
+    Please return ONLY the simplified list of JSON objects, without any additional explanation or text."""
 
 def extract_transactions(ocr_text: str) -> List[Dict[str, str]]:
     prompt = get_prompt(ocr_text)
@@ -84,9 +84,12 @@ def detect_has_transactions(chunk: str) -> bool:
     except:
         model_name = "HuggingFaceTB/SmolLM-1.7B"  # Example of a very small model
         tokenizer = AutoTokenizer.from_pretrained(model_name)
-        model = AutoModelForSequenceClassification.from_pretrained(model_name, device_map="cuda")
+        model = AutoModelForSequenceClassification.from_pretrained(model_name, device_map="cuda:0")
+        model.to("cuda:0")  # 確保模型在GPU上
 
     inputs = tokenizer(f"Does this text contain financial transactions? {chunk}", return_tensors="pt", max_length=512, truncation=True)
+    inputs = {key: value.to("cuda:0") for key, value in inputs.items()}  # 確保輸入在GPU上
+
     with torch.no_grad():
         outputs = model(**inputs)
         logits = outputs.logits
@@ -96,33 +99,42 @@ def detect_has_transactions(chunk: str) -> bool:
 def extract_transactions_locally(ocr_text: str) -> List[Dict[str, str]]:
     accelerator = Accelerator()
     prompt = get_prompt(ocr_text)
-    model_name = "meta-llama/Meta-Llama-3.1-8B-Instruct" # Use medium model
+    model_name = "codellama/CodeLlama-7b-Instruct-hf" # Use medium model
     tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForCausalLM.from_pretrained(model_name, device_map="auto")
-    model, tokenizer = accelerator.prepare(model, tokenizer)
-    inputs = tokenizer(prompt, return_tensors="pt", max_length=512, truncation=True)
+    model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16, trust_remote_code=True)
+    model = accelerator.prepare(model)
+    inputs = tokenizer(prompt, return_tensors="pt").to(accelerator.device)
+
+    token_count = len(inputs['input_ids'])
+    print(f"Token count: {token_count}")
+
     with torch.no_grad():
-        outputs = model.generate(inputs.input_ids, max_length=1000)
-        transactions_str = tokenizer.decode(outputs[0], skip_special_tokens=True)
+        outputs = model.generate(**inputs, max_length=2048)
+        transactions_str = tokenizer.batch_decode(outputs[:, inputs['input_ids'].shape[1]:], skip_special_tokens=True)[0]
+        print(transactions_str)
         transactions = json.loads(transactions_str)
         return transactions
 
             
-if __name__ == "__main__":
-    # with open("output/sample.txt", "r", encoding="utf-8") as file:
-    #     ocr_text = file.read()
-    # chunks = split_text_into_chunks(ocr_text)
-    # chunk_results = []
-    # for chunk in chunks:
-    #     result = detect_has_transactions(chunk)
-    #     chunk_results.append([chunk, result])
-    
-    # with open("output/result.csv", "w", newline='', encoding="utf-8") as file:
-    #     writer = csv.writer(file)
-    #     writer.writerow(["Chunk", "Contains Transactions"])  # 寫入標題行
-    #     writer.writerows(chunk_results)  # 寫入所有結果行
-    with open("output/sample2.txt", "r", encoding="utf-8") as file:
-        ocr_text = file.read()
-    transactions = extract_transactions_locally(ocr_text)
-    print(transactions)
+if __name__ == "__main__":  
+    chunk_results = []
+    for i in range(1, 7):
+        with open(f"output/sample{i}.txt", "r", encoding="utf-8") as file:
+            ocr_text = file.read()
+            chunks = split_text_into_chunks(ocr_text)
+            
+            for chunk in chunks:
+                result = detect_has_transactions(chunk)
+                chunk_results.append(["Does this text contain financial transactions? ", chunk, result])
+            
+    with open(f"output/result.csv", "w", newline='', encoding="utf-8") as file:
+        writer = csv.writer(file)
+        writer.writerow(["Instruction", "Chunk", "Contains Transactions"])  # 寫入標題行
+        writer.writerows(chunk_results)  # 寫入所有結果行
+
+    # for i in range(1, 7):   
+    #     with open(f"output/sample{i}.txt", "r", encoding="utf-8") as file:
+    #         ocr_text = file.read()
+    #         transactions = extract_transactions_locally(ocr_text)
+    #         print(transactions)
 

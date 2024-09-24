@@ -92,9 +92,11 @@ def clean_multiple_spaces(text: str) -> str:
 
 if __name__ == "__main__":
 
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "<Secret>"
+    # os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "<Secret>"
     
-    pdf_path = "input/sample3.pdf"
-    ocr_text = perform_ocr_pdf(pdf_path)
-    with open("output/sample.txt", "w", encoding="utf-8") as file:
-        file.write(ocr_text)
+    for i in range(1, 7):
+        pdf_path = f"input/sample{i}.pdf"
+        print(pdf_path)
+        ocr_text = perform_ocr_pdf(pdf_path)
+        with open(f"output/sample{i}.txt", "w", encoding="utf-8") as file:
+            file.write(ocr_text)
