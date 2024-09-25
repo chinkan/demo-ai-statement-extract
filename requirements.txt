@@ -11,3 +11,6 @@ accelerate
 
 #CUDA
 torch --index-url https://download.pytorch.org/whl/cu118
+
+# For LoRA training
+# datasets
