@@ -82,13 +82,12 @@ def detect_has_transactions(chunk: str) -> bool:
     try:
         model, tokenizer
     except:
-        model_name = "HuggingFaceTB/SmolLM-1.7B"  # Example of a very small model
+        # model_name = "./models/fine_tuned_model"  
+        model_name = "HuggingFaceTB/SmolLM-135M" # Example of a very small model
         tokenizer = AutoTokenizer.from_pretrained(model_name)
-        model = AutoModelForSequenceClassification.from_pretrained(model_name, device_map="cuda:0")
-        model.to("cuda:0")  # 確保模型在GPU上
+        model = AutoModelForSequenceClassification.from_pretrained(model_name)
 
-    inputs = tokenizer(f"Does this text contain financial transactions? {chunk}", return_tensors="pt", max_length=512, truncation=True)
-    inputs = {key: value.to("cuda:0") for key, value in inputs.items()}  # 確保輸入在GPU上
+    inputs = tokenizer(f"Does this text contain financial transactions? {chunk}", return_tensors="pt", max_length=1024, truncation=True)
 
     with torch.no_grad():
         outputs = model(**inputs)
@@ -118,8 +117,8 @@ def extract_transactions_locally(ocr_text: str) -> List[Dict[str, str]]:
             
 if __name__ == "__main__":  
     chunk_results = []
-    for i in range(1, 7):
-        with open(f"output/sample{i}.txt", "r", encoding="utf-8") as file:
+    for i in range(1, 3):
+        with open(f"output/test{i}.txt", "r", encoding="utf-8") as file:
             ocr_text = file.read()
             chunks = split_text_into_chunks(ocr_text)
             

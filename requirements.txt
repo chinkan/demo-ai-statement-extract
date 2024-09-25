@@ -1,3 +1,4 @@
+# For run demo
 google-cloud-vision
 pdf2image
 langgraph
@@ -5,12 +6,10 @@ requests
 gradio
 transformers
 accelerate
+# Normal
+torch
+# CUDA
+# torch --index-url https://download.pytorch.org/whl/cu118
 
-#Normal
-# torch
-
-#CUDA
-torch --index-url https://download.pytorch.org/whl/cu118
-
-# For LoRA training
-# datasets
+# For fine tuning
+scikit-learn
