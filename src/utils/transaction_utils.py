@@ -82,8 +82,8 @@ def detect_has_transactions(chunk: str) -> bool:
     try:
         model, tokenizer
     except:
-        # model_name = "./models/fine_tuned_model"  
-        model_name = "HuggingFaceTB/SmolLM-135M" # Example of a very small model
+        model_name = "./models/fine_tuned_model"  
+        # model_name = "HuggingFaceTB/SmolLM-135M" # Example of a very small model
         tokenizer = AutoTokenizer.from_pretrained(model_name)
         model = AutoModelForSequenceClassification.from_pretrained(model_name)
 
@@ -96,44 +96,66 @@ def detect_has_transactions(chunk: str) -> bool:
         return predicted_class == 1  # Assuming 1 means "yes"
     
 def extract_transactions_locally(ocr_text: str) -> List[Dict[str, str]]:
+    chunks = split_text_into_chunks(ocr_text)
+    transactions = []
+    for chunk in chunks:
+        transactions.extend(extract_transactions_for_chunk(chunk))
+    return transactions
+    
+def extract_transactions_for_chunk(chunk: str) -> List[Dict[str, str]]:
     accelerator = Accelerator()
-    prompt = get_prompt(ocr_text)
-    model_name = "codellama/CodeLlama-7b-Instruct-hf" # Use medium model
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16, trust_remote_code=True)
-    model = accelerator.prepare(model)
-    inputs = tokenizer(prompt, return_tensors="pt").to(accelerator.device)
+    model_name = "google/gemma-2-9b" # Use medium model
+    
+    global extract_tokenizer, extract_model
+    try:
+        extract_tokenizer, extract_model
+    except:
+        
+        extract_tokenizer = AutoTokenizer.from_pretrained(model_name)
+        extract_model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16)
+        extract_model = accelerator.prepare(extract_model)
 
-    token_count = len(inputs['input_ids'])
+    prompt = get_prompt(chunk)
+
+    inputs = extract_tokenizer(prompt, return_tensors="pt").to(accelerator.device)
+
+    token_count = len(inputs)
     print(f"Token count: {token_count}")
 
     with torch.no_grad():
-        outputs = model.generate(**inputs, max_length=2048)
-        transactions_str = tokenizer.batch_decode(outputs[:, inputs['input_ids'].shape[1]:], skip_special_tokens=True)[0]
+        outputs = extract_model.generate(**inputs, max_length=2048)
+        transactions_str = extract_tokenizer.decode(outputs[0], skip_special_tokens=True)
         print(transactions_str)
-        transactions = json.loads(transactions_str)
-        return transactions
+        try:
+            transactions = json.loads(transactions_str)
+            return transactions
+        except:
+            print("Error parsing JSON")
+            return []
 
             
 if __name__ == "__main__":  
-    chunk_results = []
-    for i in range(1, 3):
-        with open(f"output/test{i}.txt", "r", encoding="utf-8") as file:
-            ocr_text = file.read()
-            chunks = split_text_into_chunks(ocr_text)
-            
-            for chunk in chunks:
-                result = detect_has_transactions(chunk)
-                chunk_results.append(["Does this text contain financial transactions? ", chunk, result])
-            
-    with open(f"output/result.csv", "w", newline='', encoding="utf-8") as file:
-        writer = csv.writer(file)
-        writer.writerow(["Instruction", "Chunk", "Contains Transactions"])  # 寫入標題行
-        writer.writerows(chunk_results)  # 寫入所有結果行
-
-    # for i in range(1, 7):   
-    #     with open(f"output/sample{i}.txt", "r", encoding="utf-8") as file:
+    # chunk_results = []
+    # for i in range(1, 3):
+    #     with open(f"output/test{i}.txt", "r", encoding="utf-8") as file:
     #         ocr_text = file.read()
-    #         transactions = extract_transactions_locally(ocr_text)
-    #         print(transactions)
+    #         chunks = split_text_into_chunks(ocr_text)
+            
+    #         for chunk in chunks:
+    #             result = detect_has_transactions(chunk)
+    #             chunk_results.append(["Does this text contain financial transactions? ", chunk, result])
+            
+    # with open(f"output/result.csv", "w", newline='', encoding="utf-8") as file:
+    #     writer = csv.writer(file)
+    #     writer.writerow(["Instruction", "Chunk", "Contains Transactions"])  # 寫入標題行
+    #     writer.writerows(chunk_results)  # 寫入所有結果行
+
+    with open(f"output/test2.txt", "r", encoding="utf-8") as file:
+        ocr_text = file.read()
+        chunks = split_text_into_chunks(ocr_text)
+        for chunk in chunks:
+            result = detect_has_transactions(chunk)
+            if result:
+                transactions = extract_transactions_for_chunk(chunk)
+                print(transactions)
 
