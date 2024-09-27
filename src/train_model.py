@@ -3,6 +3,7 @@ import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, TrainingArguments, Trainer
 from datasets import Dataset
 from sklearn.model_selection import train_test_split
+import matplotlib.pyplot as plt
 
 # 讀取CSV文件
 df = pd.read_csv('./input/data.csv')
@@ -33,16 +34,17 @@ model.config.pad_token_id = tokenizer.pad_token_id # 確保模型知道pad_token
 # 定義訓練參數
 training_args = TrainingArguments(
     output_dir="./output/train_results",
-    num_train_epochs=3,
-    per_device_train_batch_size=8,
-    per_device_eval_batch_size=8,
-    warmup_steps=500,
+    num_train_epochs=10,
+    per_device_train_batch_size=2,
+    per_device_eval_batch_size=2,
+    warmup_steps=1000,
     weight_decay=0.01,
     logging_dir='./logs',
     logging_steps=10,
-    evaluation_strategy="epoch",
+    eval_strategy="epoch",
     save_strategy="epoch",
     load_best_model_at_end=True,
+    learning_rate=1e-4,
 )
 
 # 設置Trainer並開始訓練
@@ -54,7 +56,33 @@ trainer = Trainer(
     tokenizer=tokenizer,
 )
 
-trainer.train()
+# 訓練模型
+train_result = trainer.train()
 
-# 保存模型
-trainer.save_model("./models/fine_tuned_model")
+# 獲取訓練歷史
+history = trainer.state.log_history
+
+# 繪製訓練結果圖表
+plt.figure(figsize=(12,5))
+
+# 繪製損失函數圖表
+plt.subplot(1,2,1)
+train_loss = [x['loss'] for x in history if 'loss' in x]
+plt.plot(train_loss, label='train loss')
+plt.title('train loss')
+plt.xlabel('step')
+plt.ylabel('loss')
+plt.legend()
+
+# 繪製評估損失圖表（如果有的話）
+plt.subplot(1,2,2)
+eval_loss = [x['eval_loss'] for x in history if 'eval_loss' in x]
+if eval_loss:
+    plt.plot(eval_loss, label='eval loss')
+    plt.title('eval loss')
+    plt.xlabel('step')
+    plt.ylabel('loss')
+    plt.legend()
+
+plt.tight_layout()
+plt.show()
