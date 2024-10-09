@@ -4,7 +4,7 @@ import json
 from main import process_file_from_ui
 import pandas as pd
 import tempfile
-from fastapi import FastAPI, File, UploadFile, Form
+from fastapi import FastAPI, File, UploadFile, Form, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uuid
 
@@ -48,8 +48,9 @@ def continue_processing(human_input, thread_id):
     return process_statement(None, thread, human_input)
 
 def export_transactions(output):
-    output.to_csv("output.csv", index=False)
-    return gr.File(value="output.csv", visible=True)
+    with tempfile.NamedTemporaryFile(mode='w+', delete=False, suffix='.csv') as temp_file:
+        output.to_csv(temp_file.name, index=False)
+        return temp_file.name
 
 # 創建 FastAPI 應用
 app = FastAPI()
@@ -102,8 +103,8 @@ async def api_continue_processing(human_input: str = Form(...), thread_id: str =
 @app.post("/export_transactions")
 async def api_export_transactions(output: str = Form(...)):
     df = pd.read_json(output)
-    result = export_transactions(df)
-    return {"file_path": result.value}
+    csv_file_path = export_transactions(df)
+    return FileResponse(csv_file_path, media_type='text/csv', filename='transactions.csv')
 
 # Gradio 界面
 with gr.Blocks() as demo:
@@ -143,7 +144,7 @@ with gr.Blocks() as demo:
             
             ```python
             import requests
-            
+            import json
             # Process a new statement
             url = "http://localhost:7860/process"
             files = {
@@ -168,11 +169,11 @@ with gr.Blocks() as demo:
             }
             response = requests.post(url, data=data)
             print(response.json())
-            response_data = response.json()
+            result = response.json()
             
             # Export transactions
             url = "http://localhost:7860/export_transactions"
-            data = {'output': response_data.data}
+            data = {'output': json.dumps(result)}
             response = requests.post(url, data=data)
             print(response.json())
             ```
