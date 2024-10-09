@@ -131,8 +131,8 @@ with gr.Blocks() as demo:
                     csv = gr.File(label="CSV", interactive=False)
             with gr.Row():
                 with gr.Accordion("API Settings", open=True):
-                    gr.Markdown("Google Cloud Vision API (Optional)")
-                    cloud_vision_api_key = gr.File(label="Select your Google Cloud Vision API key file (Optional)")
+                    gr.Markdown("Google Cloud Vision API")
+                    cloud_vision_api_key = gr.File(label="Select your Google Cloud Vision API key file")
                     gr.Markdown("OpenRouter API")
                     openrouter_api_key = gr.Textbox(label="Enter your OpenRouter API key", type="password", value=os.getenv("OPENROUTER_API_KEY"))
                     openrouter_model = gr.Textbox(label="Enter your OpenRouter model",value=os.getenv("OPENROUTER_MODEL"))
