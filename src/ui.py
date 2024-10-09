@@ -4,7 +4,8 @@ import json
 from main import process_file_from_ui
 import pandas as pd
 import tempfile
-from fastapi import FastAPI, File, UploadFile, Form, FileResponse
+from fastapi import FastAPI, File, UploadFile, Form
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uuid
 
