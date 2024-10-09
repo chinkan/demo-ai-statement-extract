@@ -3,3 +3,7 @@ pdf2image
 langgraph
 requests
 gradio
+fastapi
+uvicorn
+pandas
+python-multipart

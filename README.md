@@ -1,12 +1,22 @@
-# Credit Card Statement Assistant
+---
+title: WizLedger - Monthly Statement Processor
+emoji: 💳
+colorFrom: indigo
+colorTo: yellow
+sdk: gradio
+sdk_version: 4.43.0
+app_file: src/ui.py
+pinned: false
+license: mit
+---
+
+# WizLedger - Monthly Statement Processor
 
 ## Introduction
 
 This project demonstrates a credit card statement assistant that can process PDF statements, perform OCR, and use LangGraph for AI-based transaction corrections.
 
-
 https://github.com/user-attachments/assets/a7f5a839-c7bd-4598-bdfe-9c2168008657
-
 
 ## Technologies
 
@@ -73,6 +83,51 @@ graph TD
 ## Output
 
 Processed data will be saved in the `output` folder.
+
+## Docker build
+
+```bash
+docker build -t wizledger .
+docker run -d -p 7860:7860 wizledger
+```
+
+## API
+
+```python
+import requests
+import json
+# Process a new statement
+url = "http://localhost:7860/process"
+files = {
+    'statement': ('statement.pdf', open('path/to/statement.pdf', 'rb'), 'application/pdf'),
+    'cloud_vision_api_key': ('key.json', open('path/to/cloud_vision_key.json', 'rb'), 'application/json')
+}
+data = {
+    'openrouter_api_key': 'your_openrouter_api_key', # Your OpenRouter API key
+    'openrouter_model': 'anthropic/claude-3.5-sonnet', # Recommend to use Claude 3.5 Sonnet, but you can use other models
+    'openrouter_api_url': 'https://openrouter.ai/api/v1/chat/completions' # Compatible with OpenAI API
+}
+response = requests.post(url, files=files, data=data)
+result = response.json()
+print(result['result'])
+thread_id = result['thread_id']
+
+# Continue processing
+url = "http://localhost:7860/continue_processing"
+data = {
+    'human_input': 'Some human input',
+    'thread_id': thread_id
+}
+response = requests.post(url, data=data)
+print(response.json())
+result = response.json()
+
+# Export transactions
+url = "http://localhost:7860/export_transactions"
+data = {'output': json.dumps(result)}
+response = requests.post(url, data=data)
+print(response.json())
+```
 
 ## Contributing
 
