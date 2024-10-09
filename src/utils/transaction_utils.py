@@ -135,27 +135,26 @@ def extract_transactions_for_chunk(chunk: str) -> List[Dict[str, str]]:
 
             
 if __name__ == "__main__":  
-    # chunk_results = []
-    # for i in range(1, 3):
-    #     with open(f"output/test{i}.txt", "r", encoding="utf-8") as file:
-    #         ocr_text = file.read()
-    #         chunks = split_text_into_chunks(ocr_text)
-            
-    #         for chunk in chunks:
-    #             result = detect_has_transactions(chunk)
-    #             chunk_results.append(["Does this text contain financial transactions? ", chunk, result])
-            
-    # with open(f"output/result.csv", "w", newline='', encoding="utf-8") as file:
-    #     writer = csv.writer(file)
-    #     writer.writerow(["Instruction", "Chunk", "Contains Transactions"])  # 寫入標題行
-    #     writer.writerows(chunk_results)  # 寫入所有結果行
-
-    with open(f"output/test2.txt", "r", encoding="utf-8") as file:
+    chunk_results = []
+    with open(f"input/sample_new.txt", "r", encoding="utf-8") as file:
         ocr_text = file.read()
         chunks = split_text_into_chunks(ocr_text)
+        
         for chunk in chunks:
             result = detect_has_transactions(chunk)
-            if result:
-                transactions = extract_transactions_for_chunk(chunk)
-                print(transactions)
+            chunk_results.append(["Does this text contain financial transactions? ", chunk.replace('\n', ' '), result])
+            
+    with open(f"output/result_new_after_train10.csv", "w", encoding="utf-8") as file:
+        writer = csv.writer(file)
+        writer.writerow(["Instruction", "Chunk", "Contains Transactions"])  # 寫入標題行
+        writer.writerows(chunk_results)  # 寫入所有結果行
+
+    # with open(f"output/test2.txt", "r", encoding="utf-8") as file:
+    #     ocr_text = file.read()
+    #     chunks = split_text_into_chunks(ocr_text)
+    #     for chunk in chunks:
+    #         result = detect_has_transactions(chunk)
+    #         if result:
+    #             transactions = extract_transactions_for_chunk(chunk)
+    #             print(transactions)
 

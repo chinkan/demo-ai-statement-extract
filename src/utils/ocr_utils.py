@@ -94,9 +94,9 @@ if __name__ == "__main__":
 
     # os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "<Secret>"
     
-    for i in range(1, 3):
-        pdf_path = f"input/test{i}.pdf"
+    for i in range(1, 23):
+        pdf_path = f"input/sample{i}.pdf"
         print(pdf_path)
         ocr_text = perform_ocr_pdf(pdf_path)
-        with open(f"output/test{i}.txt", "w", encoding="utf-8") as file:
+        with open(f"output/sample{i}.txt", "w", encoding="utf-8") as file:
             file.write(ocr_text)
