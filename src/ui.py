@@ -17,30 +17,29 @@ def process_statement(statement, thread, human_input = None):
     return pd.DataFrame(result)
 
 def process(statement, cloud_vision_api_key, openrouter_api_key, openrouter_model, openrouter_api_url):
-    # 對於 gr.File 組件，我們直接獲取文件路徑
     statement_path = statement.name if hasattr(statement, 'name') else statement
-    cloud_vision_api_key_path = cloud_vision_api_key.name if hasattr(cloud_vision_api_key, 'name') else cloud_vision_api_key
-
-    # 讀取 cloud_vision_api_key 文件內容
-    with open(cloud_vision_api_key_path, 'r') as key_file:
-        cloud_vision_api_key_content = key_file.read()
-
-    with tempfile.NamedTemporaryFile(mode='w+', delete=False, suffix='.json') as temp_file:
-        temp_file.write(cloud_vision_api_key_content)
-        temp_file_path = temp_file.name
-
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = temp_file_path
+    
+    # 檢查是否提供了 cloud_vision_api_key
+    if cloud_vision_api_key:
+        cloud_vision_api_key_path = cloud_vision_api_key.name if hasattr(cloud_vision_api_key, 'name') else cloud_vision_api_key
+        with open(cloud_vision_api_key_path, 'r') as key_file:
+            cloud_vision_api_key_content = key_file.read()
+        with tempfile.NamedTemporaryFile(mode='w+', delete=False, suffix='.json') as temp_file:
+            temp_file.write(cloud_vision_api_key_content)
+            temp_file_path = temp_file.name
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = temp_file_path
+    
     os.environ["OPENROUTER_API_KEY"] = openrouter_api_key
     os.environ["OPENROUTER_MODEL"] = openrouter_model
     os.environ["OPENROUTER_API_URL"] = openrouter_api_url
 
-    # 生成新的 thread ID
     thread = {"configurable": {"thread_id": str(uuid.uuid4())}}
 
     try:
         result = process_statement(statement_path, thread)
     finally:
-        os.unlink(temp_file_path)
+        if cloud_vision_api_key:
+            os.unlink(temp_file_path)
 
     return result, thread["configurable"]["thread_id"]
 
@@ -68,7 +67,7 @@ app.add_middleware(
 @app.post("/process")
 async def api_process(
     statement: UploadFile = File(...),
-    cloud_vision_api_key: UploadFile = File(...),
+    cloud_vision_api_key: UploadFile = File(None),
     openrouter_api_key: str = Form(...),
     openrouter_model: str = Form(...),
     openrouter_api_url: str = Form(...)
@@ -77,12 +76,13 @@ async def api_process(
         temp_statement.write(await statement.read())
         temp_statement_path = temp_statement.name
 
-    with tempfile.NamedTemporaryFile(delete=False, suffix='.json') as temp_key:
-        temp_key.write(await cloud_vision_api_key.read())
-        temp_key_path = temp_key.name
+    if cloud_vision_api_key:
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.json') as temp_key:
+            temp_key.write(await cloud_vision_api_key.read())
+            temp_key_path = temp_key.name
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = temp_key_path
 
     try:
-        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = temp_key_path
         os.environ["OPENROUTER_API_KEY"] = openrouter_api_key
         os.environ["OPENROUTER_MODEL"] = openrouter_model
         os.environ["OPENROUTER_API_URL"] = openrouter_api_url
@@ -93,7 +93,8 @@ async def api_process(
         return {"result": result.to_dict(orient='records'), "thread_id": thread_id}
     finally:
         os.unlink(temp_statement_path)
-        os.unlink(temp_key_path)
+        if cloud_vision_api_key:
+            os.unlink(temp_key_path)
 
 @app.post("/continue_processing")
 async def api_continue_processing(human_input: str = Form(...), thread_id: str = Form(...)):
@@ -130,8 +131,8 @@ with gr.Blocks() as demo:
                     csv = gr.File(label="CSV", interactive=False)
             with gr.Row():
                 with gr.Accordion("API Settings", open=True):
-                    gr.Markdown("Google Cloud Vision API")
-                    cloud_vision_api_key = gr.File(label="Select your Google Cloud Vision API key file")
+                    gr.Markdown("Google Cloud Vision API (Optional)")
+                    cloud_vision_api_key = gr.File(label="Select your Google Cloud Vision API key file (Optional)")
                     gr.Markdown("OpenRouter API")
                     openrouter_api_key = gr.Textbox(label="Enter your OpenRouter API key", type="password", value=os.getenv("OPENROUTER_API_KEY"))
                     openrouter_model = gr.Textbox(label="Enter your OpenRouter model",value=os.getenv("OPENROUTER_MODEL"))
