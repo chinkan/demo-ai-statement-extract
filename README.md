@@ -16,7 +16,13 @@ license: mit
 
 This project demonstrates a credit card statement assistant that can process PDF statements, perform OCR, and use LangGraph for AI-based transaction corrections.
 
+### Demo
+
 https://github.com/user-attachments/assets/a7f5a839-c7bd-4598-bdfe-9c2168008657
+
+### Try it on HuggingFace
+
+https://huggingface.co/spaces/chinkanai/wizledger
 
 ## Technologies
 
@@ -84,11 +90,22 @@ graph TD
 
 Processed data will be saved in the `output` folder.
 
-## Docker build
+## Docker run from build local
 
 ```bash
 docker build -t wizledger .
 docker run -d -p 7860:7860 wizledger
+```
+
+## Docker run from huggingface
+
+```bash
+docker run -it -p 7860:7860 --platform=linux/amd64 \
+	-e OPENROUTER_MODEL="anthropic/claude-3.5-sonnet" \
+	-e OPENROUTER_API_URL="https://openrouter.ai/api/v1/chat/completions" \
+	-e OPENROUTER_API_KEY="<replace with your openrouter api key>" \
+	-e CLOUD_VISION_API_KEY="<replace with your cloud vision api key>" \
+	registry.hf.space/chinkanai-wizledger:latest python src/ui.py
 ```
 
 ## API
