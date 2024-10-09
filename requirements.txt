@@ -3,3 +3,8 @@ pdf2image
 langgraph
 requests
 gradio
+pandas
+Pillow
+opencv-python-headless
+numpy
+# 其他必要的依賴
