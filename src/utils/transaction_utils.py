@@ -6,6 +6,7 @@ from typing import List, Dict
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, AutoModelForCausalLM
 from accelerate import Accelerator
+from transformers import pipeline
 
 def get_prompt(ocr_text: str) -> str:
     return f"""You are an AI assistant trained to extract transaction information from financial statements. 
@@ -103,50 +104,47 @@ def extract_transactions_locally(ocr_text: str) -> List[Dict[str, str]]:
     return transactions
     
 def extract_transactions_for_chunk(chunk: str) -> List[Dict[str, str]]:
-    accelerator = Accelerator()
-    model_name = "google/gemma-2-9b" # Use medium model
-    
-    global extract_tokenizer, extract_model
+    global pipe
     try:
-        extract_tokenizer, extract_model
-    except:
-        
-        extract_tokenizer = AutoTokenizer.from_pretrained(model_name)
-        extract_model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16)
-        extract_model = accelerator.prepare(extract_model)
+        pipe
+    except NameError:
+        pipe = pipeline(
+            "text-generation",
+            model="google/gemma-2-9b-it",
+            model_kwargs={"torch_dtype": torch.bfloat16},
+            device="mps"  # 如果在Mac設備上運行，請將此更改為"mps"
+        )
 
     prompt = get_prompt(chunk)
+    messages = [
+        {"role": "user", "content": prompt}
+    ]
 
-    inputs = extract_tokenizer(prompt, return_tensors="pt").to(accelerator.device)
+    outputs = pipe(messages, max_new_tokens=2048)
+    transactions_str = outputs[0]["generated_text"][-1]["content"].strip()
+    print(transactions_str)
 
-    token_count = len(inputs)
-    print(f"Token count: {token_count}")
-
-    with torch.no_grad():
-        outputs = extract_model.generate(**inputs, max_length=2048)
-        transactions_str = extract_tokenizer.decode(outputs[0], skip_special_tokens=True)
-        print(transactions_str)
-        try:
-            transactions = json.loads(transactions_str)
-            return transactions
-        except:
-            print("Error parsing JSON")
-            return []
+    try:
+        transactions = json.loads(transactions_str)
+        return transactions
+    except json.JSONDecodeError:
+        print("解析JSON時出錯")
+        return []
 
             
 if __name__ == "__main__":  
     chunk_results = []
-    with open(f"input/sample_new.txt", "r", encoding="utf-8") as file:
+    with open(f"output/sample22.txt", "r", encoding="utf-8") as file:
         ocr_text = file.read()
         chunks = split_text_into_chunks(ocr_text)
         
         for chunk in chunks:
-            result = detect_has_transactions(chunk)
-            chunk_results.append(["Does this text contain financial transactions? ", chunk.replace('\n', ' '), result])
+            result = extract_transactions_for_chunk(chunk)
+            chunk_results.append([chunk.replace('\n', ' '), result])
             
-    with open(f"output/result_new_after_train10.csv", "w", encoding="utf-8") as file:
+    with open(f"output/test_gemma_result.csv", "w", encoding="utf-8") as file:
         writer = csv.writer(file)
-        writer.writerow(["Instruction", "Chunk", "Contains Transactions"])  # 寫入標題行
+        writer.writerow(["Chunk", "Transactions"])  # 寫入標題行
         writer.writerows(chunk_results)  # 寫入所有結果行
 
     # with open(f"output/test2.txt", "r", encoding="utf-8") as file:

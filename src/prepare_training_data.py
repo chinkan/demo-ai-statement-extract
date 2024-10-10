@@ -53,6 +53,8 @@ with open('./input/sample_new_balanced.txt', 'w', encoding='utf-8') as file:
         file.write(content.replace('\n', ' ') + '\n')
 
 print("原始數據集大小:", len(df))
+print("原始正樣本數量:", sum(df['HasTransaction']))
+print("原始負樣本數量:", len(df) - sum(df['HasTransaction']))
 print("平衡後數據集大小:", len(df_resampled))
 print("正樣本數量:", sum(df_resampled['HasTransaction']))
 print("負樣本數量:", len(df_resampled) - sum(df_resampled['HasTransaction']))
