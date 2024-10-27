@@ -6,29 +6,21 @@ from typing import List, Dict
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
-from pydantic import BaseModel, Field, RootModel
-
-class Transaction(BaseModel):
-    date: str = Field(description="The date of the transaction in the format YYYY-MM-DD")
-    description: str = Field(description="A brief description of the transaction")
-    amount: float = Field(description="The transaction amount as a float (negative for debits, positive for credits)")
-
-class Transactions(RootModel[List[Transaction]]):
-    pass
+from models.transactions import Transactions
 
 def get_prompt_template() -> str:
     return """You are an AI assistant trained to extract transaction information from financial statements. 
-    Given the following text from a financial statement, please extract all transactions and format them as a list of JSON objects.
-    Each transaction should have the following properties:
-    - date: The date of the transaction in the format YYYY-MM-DD
-    - description: A brief description of the transaction
-    - amount: The transaction amount as a float (negative for debits, positive for credits)
-    
-    Here's the text from the financial statement:
+Given the following text from a financial statement, please extract all transactions and format them as a list of JSON objects.
+Each transaction should have the following properties:
+- date: The date of the transaction in the format YYYY-MM-DD
+- description: A brief description of the transaction
+- amount: The transaction amount as a float (negative for debits, positive for credits)
 
-    {ocr_text}
-    
-    Please return ONLY the list of JSON objects, without any additional explanation or text."""
+Here's the text from the financial statement:
+
+{ocr_text}
+
+Please return ONLY the list of JSON objects, without any additional explanation or text."""
 
 def extract_transactions(ocr_text: str) -> List[Dict[str, str]]:
     prompt_text = get_prompt_template()
@@ -47,7 +39,7 @@ def extract_transactions(ocr_text: str) -> List[Dict[str, str]]:
     chain = prompt | llm | parser
 
     try:
-        transactions = chain.invoke({"ocr_text": ocr_text})
+        transactions: Transactions = chain.invoke({"ocr_text": ocr_text})
 
         # validate and clean up the transactions
         validated_transactions = []
@@ -86,4 +78,6 @@ if __name__ == "__main__":
     with open("output/sample1.txt", "r", encoding="utf-8") as file:
         ocr_text = file.read()
         transactions = extract_transactions(ocr_text)
-        print(transactions)
+        
+        with open("output/transactions.json", "w", encoding="utf-8") as jsonfile:
+            json.dump(transactions, jsonfile, indent=2)

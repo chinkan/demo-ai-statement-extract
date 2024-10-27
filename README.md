@@ -26,6 +26,7 @@ https://huggingface.co/spaces/chinkanai/wizledger
 
 ## Technologies
 
+-   LangChain
 -   LangGraph
 -   Google Cloud Vision API [Google Cloud Vision API](https://cloud.google.com/vision)
 -   OpenRouter API (for access Claude 3.5 Sonnet) [OpenRouter API](https://openrouter.ai/)
