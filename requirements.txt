@@ -1,5 +1,6 @@
 google-cloud-vision
 pdf2image
+langchain-openai
 langgraph
 requests
 gradio

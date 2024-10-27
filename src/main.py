@@ -2,7 +2,7 @@ import os
 import json
 import traceback
 from typing import List, Dict, Callable
-from langgraph.graph import StateGraph, END
+from langgraph.graph import StateGraph
 from langgraph.checkpoint.memory import MemorySaver
 from nodes.ocr_node import ocr_node
 from nodes.extract_node import extract_node
@@ -30,7 +30,7 @@ workflow.add_edge("extract", "display_transactions")
 workflow.add_edge("display_transactions", "get_human_input")
 workflow.add_edge("get_human_input", "process_human_input")
 workflow.add_edge("process_human_input", "check_if_done")
-workflow.add_edge("store_csv", END)
+workflow.set_finish_point("store_csv")
 
 # Add conditional edge
 workflow.add_conditional_edges(

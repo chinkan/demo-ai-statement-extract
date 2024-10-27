@@ -3,47 +3,52 @@ import json
 import csv
 import os
 from typing import List, Dict
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import PydanticOutputParser
+from models.transactions import Transactions
+
+def get_prompt_template() -> str:
+    return """You are an AI assistant trained to extract transaction information from financial statements. 
+Given the following text from a financial statement, please extract all transactions and format them as a list of JSON objects.
+Each transaction should have the following properties:
+- date: The date of the transaction in the format YYYY-MM-DD
+- description: A brief description of the transaction
+- amount: The transaction amount as a float (negative for debits, positive for credits)
+
+Here's the text from the financial statement:
+
+{ocr_text}
+
+Please return ONLY the list of JSON objects, without any additional explanation or text."""
 
 def extract_transactions(ocr_text: str) -> List[Dict[str, str]]:
-    prompt = f"""You are an AI assistant trained to extract transaction information from financial statements. 
-    Given the following text from a financial statement, please extract all transactions and format them as a list of JSON objects.
-    Each transaction should have the following properties:
-    - date: The date of the transaction in the format YYYY-MM-DD
-    - description: A brief description of the transaction
-    - amount: The transaction amount as a float (negative for debits, positive for credits)
+    prompt_text = get_prompt_template()
 
-    Here's the text from the financial statement:
+    llm = ChatOpenAI(
+        model_name=os.getenv('OPENROUTER_MODEL'), 
+        openai_api_base=os.getenv('OPENROUTER_API_URL'), 
+        openai_api_key=os.getenv('OPENROUTER_API_KEY'))
+    prompt = ChatPromptTemplate.from_template(prompt_text)
+    parser = PydanticOutputParser(pydantic_object=Transactions)
 
-    {ocr_text}
+    #*** OpenRouter not support structured output ***  
+    # structured_llm = llm.with_structured_output(Transaction)
+    # chain = prompt | structured_llm
 
-    Please return ONLY the list of JSON objects, without any additional explanation or text."""
-
-    headers = {
-        "Authorization": f"Bearer {os.getenv('OPENROUTER_API_KEY')}",
-        "Content-Type": "application/json"
-    }
-
-    data = {
-        "model": os.getenv('OPENROUTER_MODEL'),
-        "messages": [{"role": "user", "content": prompt}]
-    }
+    chain = prompt | llm | parser
 
     try:
-        response = requests.post(os.getenv('OPENROUTER_API_URL'), headers=headers, json=data)
-        response.raise_for_status()
-        
-        result = response.json()
-        transactions_str = result['choices'][0]['message']['content']
-        
-        transactions = json.loads(transactions_str)
-        
-        # Validate and clean up the transactions
+        transactions: Transactions = chain.invoke({"ocr_text": ocr_text})
+
+        # validate and clean up the transactions
         validated_transactions = []
-        for transaction in transactions:
-            if all(key in transaction for key in ['date', 'description', 'amount']):
-                # Ensure amount is a float
-                transaction['amount'] = float(transaction['amount'])
-                validated_transactions.append(transaction)
+        for transaction in transactions.root:
+            # because Transaction is a BaseModel, so we can access the properties directly
+            if transaction.date and transaction.description and transaction.amount is not None:
+                # ensure amount is a float
+                transaction.amount = float(transaction.amount)
+                validated_transactions.append(transaction.model_dump())
         
         return validated_transactions
     except Exception as e:
@@ -60,3 +65,19 @@ def store_transactions_csv(transactions: List[Dict[str, str]], filename: str):
             writer.writerow(transaction)
     
     print(f"Transactions stored in {filename}")
+
+if __name__ == "__main__":
+
+    # load_dotenv()
+
+    print(os.getenv('OPENROUTER_API_KEY'))
+    print(os.getenv('OPENROUTER_API_URL'))
+    print(os.getenv('OPENROUTER_MODEL'))
+
+    # Read the sample text file
+    with open("output/sample1.txt", "r", encoding="utf-8") as file:
+        ocr_text = file.read()
+        transactions = extract_transactions(ocr_text)
+        
+        with open("output/transactions.json", "w", encoding="utf-8") as jsonfile:
+            json.dump(transactions, jsonfile, indent=2)
