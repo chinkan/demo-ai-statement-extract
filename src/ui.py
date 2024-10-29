@@ -68,9 +68,9 @@ app.add_middleware(
 async def api_process(
     statement: UploadFile = File(...),
     cloud_vision_api_key: UploadFile = File(None),
-    openrouter_api_key: str = Form(...),
-    openrouter_model: str = Form(...),
-    openrouter_api_url: str = Form(...)
+    openrouter_api_key: str = Form(None),
+    openrouter_model: str = Form(None),
+    openrouter_api_url: str = Form(None)
 ):
     with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as temp_statement:
         temp_statement.write(await statement.read())
@@ -83,9 +83,9 @@ async def api_process(
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = temp_key_path
 
     try:
-        os.environ["OPENROUTER_API_KEY"] = openrouter_api_key
-        os.environ["OPENROUTER_MODEL"] = openrouter_model
-        os.environ["OPENROUTER_API_URL"] = openrouter_api_url
+        os.environ["OPENROUTER_API_KEY"] = openrouter_api_key if openrouter_api_key else os.getenv("OPENROUTER_API_KEY")
+        os.environ["OPENROUTER_MODEL"] = openrouter_model if openrouter_model else os.getenv("OPENROUTER_MODEL")
+        os.environ["OPENROUTER_API_URL"] = openrouter_api_url if openrouter_api_url else os.getenv("OPENROUTER_API_URL")
 
         thread_id = str(uuid.uuid4())
         thread = {"configurable": {"thread_id": thread_id}}
@@ -151,18 +151,12 @@ with gr.Blocks() as demo:
             url = "http://localhost:7860/process"
             files = {
                 'statement': ('statement.pdf', open('path/to/statement.pdf', 'rb'), 'application/pdf'),
-                'cloud_vision_api_key': ('key.json', open('path/to/cloud_vision_key.json', 'rb'), 'application/json')
             }
-            data = {
-                'openrouter_api_key': 'your_openrouter_api_key', # Your OpenRouter API key
-                'openrouter_model': 'anthropic/claude-3.5-sonnet', # Recommend to use Claude 3.5 Sonnet, but you can use other models
-                'openrouter_api_url': 'https://openrouter.ai/api/v1/chat/completions' # Compatible with OpenAI API
-            }
-            response = requests.post(url, files=files, data=data)
+            response = requests.post(url, files=files)
             result = response.json()
             print(result['result'])
             thread_id = result['thread_id']
-            
+
             # Continue processing
             url = "http://localhost:7860/continue_processing"
             data = {
@@ -177,7 +171,12 @@ with gr.Blocks() as demo:
             url = "http://localhost:7860/export_transactions"
             data = {'output': json.dumps(result)}
             response = requests.post(url, data=data)
-            print(response.json())
+
+            # Display the transactions
+            import pandas as pd
+            import io
+            df = pd.read_csv(io.BytesIO(response.content), encoding='utf-8')
+            display(df)
             ```
             
             Make sure to replace the placeholder values with your actual data and API keys.

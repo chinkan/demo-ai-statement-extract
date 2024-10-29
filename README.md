@@ -95,7 +95,13 @@ Processed data will be saved in the `output` folder.
 
 ```bash
 docker build -t wizledger .
-docker run -d -p 7860:7860 wizledger
+docker run -d -p 7860:7860 \
+    -e OPENROUTER_MODEL="anthropic/claude-3.5-sonnet" \
+    -e OPENROUTER_API_URL="https://openrouter.ai/api/v1" \
+    -e OPENROUTER_API_KEY="<replace with your openrouter api key>" \
+    -e CLOUD_VISION_API_KEY="/app/secret/google-key.json" \
+    -v ./secret:/app/secret \
+    wizledger
 ```
 
 ## Docker run from huggingface
@@ -106,7 +112,7 @@ docker run -d -p 7860:7860 wizledger
 ```bash
 docker run -it -p 7860:7860 --platform=linux/amd64 \
 	-e OPENROUTER_MODEL="anthropic/claude-3.5-sonnet" \
-	-e OPENROUTER_API_URL="https://openrouter.ai/api/v1/chat/completions" \
+	-e OPENROUTER_API_URL="https://openrouter.ai/api/v1" \
 	-e OPENROUTER_API_KEY="<replace with your openrouter api key>" \
 	-e CLOUD_VISION_API_KEY="/app/secret/google-key.json" \
     -v ./secret:/app/secret \
@@ -122,14 +128,8 @@ import json
 url = "http://localhost:7860/process"
 files = {
     'statement': ('statement.pdf', open('path/to/statement.pdf', 'rb'), 'application/pdf'),
-    'cloud_vision_api_key': ('key.json', open('path/to/cloud_vision_key.json', 'rb'), 'application/json')
 }
-data = {
-    'openrouter_api_key': 'your_openrouter_api_key', # Your OpenRouter API key
-    'openrouter_model': 'anthropic/claude-3.5-sonnet', # Recommend to use Claude 3.5 Sonnet, but you can use other models
-    'openrouter_api_url': 'https://openrouter.ai/api/v1/chat/completions' # Compatible with OpenAI API
-}
-response = requests.post(url, files=files, data=data)
+response = requests.post(url, files=files)
 result = response.json()
 print(result['result'])
 thread_id = result['thread_id']
@@ -148,7 +148,12 @@ result = response.json()
 url = "http://localhost:7860/export_transactions"
 data = {'output': json.dumps(result)}
 response = requests.post(url, data=data)
-print(response.json())
+
+# Display the transactions
+import pandas as pd
+import io
+df = pd.read_csv(io.BytesIO(response.content), encoding='utf-8')
+display(df)
 ```
 
 ## Contributing
