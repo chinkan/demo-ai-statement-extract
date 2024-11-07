@@ -12,5 +12,9 @@ torch
 # torch --index-url https://download.pytorch.org/whl/cu118
 
 # For fine tuning
-# scikit-learn
-# imblearn
+scikit-learn
+imblearn
+
+# For Lora training
+peft
+datasets
