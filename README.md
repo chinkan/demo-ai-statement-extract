@@ -99,7 +99,7 @@ docker run -d -p 7860:7860 \
     -e OPENROUTER_MODEL="anthropic/claude-3.5-sonnet" \
     -e OPENROUTER_API_URL="https://openrouter.ai/api/v1" \
     -e OPENROUTER_API_KEY="<replace with your openrouter api key>" \
-    -e CLOUD_VISION_API_KEY="/app/secret/google-key.json" \
+    -e GOOGLE_APPLICATION_CREDENTIALS="/app/secret/google-key.json" \
     -v ./secret:/app/secret \
     wizledger
 ```
@@ -114,7 +114,7 @@ docker run -it -p 7860:7860 --platform=linux/amd64 \
 	-e OPENROUTER_MODEL="anthropic/claude-3.5-sonnet" \
 	-e OPENROUTER_API_URL="https://openrouter.ai/api/v1" \
 	-e OPENROUTER_API_KEY="<replace with your openrouter api key>" \
-	-e CLOUD_VISION_API_KEY="/app/secret/google-key.json" \
+	-e GOOGLE_APPLICATION_CREDENTIALS="/app/secret/google-key.json" \
     -v ./secret:/app/secret \
 	registry.hf.space/chinkanai-wizledger:latest python src/ui.py
 ```
