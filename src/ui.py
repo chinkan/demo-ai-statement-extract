@@ -4,7 +4,7 @@ import json
 from main import process_file_from_ui
 import pandas as pd
 import tempfile
-from fastapi import FastAPI, File, UploadFile, Form
+from fastapi import FastAPI, File, UploadFile, Form, Request
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uuid
@@ -97,13 +97,18 @@ async def api_process(
             os.unlink(temp_key_path)
 
 @app.post("/continue_processing")
-async def api_continue_processing(human_input: str = Form(...), thread_id: str = Form(...)):
+async def api_continue_processing(request: Request):
+    data = await request.json()
+    human_input = data["human_input"]
+    thread_id = data["thread_id"]
     thread = {"configurable": {"thread_id": thread_id}}
     result = continue_processing(human_input, thread_id)
     return result.to_dict(orient='records')
 
 @app.post("/export_transactions")
-async def api_export_transactions(output: str = Form(...)):
+async def api_export_transactions(request: Request):
+    data = await request.json()
+    output = data["output"]
     df = pd.read_json(output)
     csv_file_path = export_transactions(df)
     return FileResponse(csv_file_path, media_type='text/csv', filename='transactions.csv')
@@ -163,14 +168,14 @@ with gr.Blocks() as demo:
                 'human_input': 'Some human input',
                 'thread_id': thread_id
             }
-            response = requests.post(url, data=data)
+            response = requests.post(url, json=data)
             print(response.json())
             result = response.json()
             
             # Export transactions
             url = "http://localhost:7860/export_transactions"
             data = {'output': json.dumps(result)}
-            response = requests.post(url, data=data)
+            response = requests.post(url, json=data)
 
             # Display the transactions
             import pandas as pd

@@ -140,14 +140,14 @@ data = {
     'human_input': 'Some human input',
     'thread_id': thread_id
 }
-response = requests.post(url, data=data)
+response = requests.post(url, json=data)
 print(response.json())
 result = response.json()
 
 # Export transactions
 url = "http://localhost:7860/export_transactions"
 data = {'output': json.dumps(result)}
-response = requests.post(url, data=data)
+response = requests.post(url, json=data)
 
 # Display the transactions
 import pandas as pd
