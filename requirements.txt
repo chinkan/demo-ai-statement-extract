@@ -18,3 +18,9 @@ imblearn
 # For Lora training
 peft
 datasets
+matplotlib
+
+# For Jupyter Notebook
+ipython
+ipykernel
+ipywidgets
